@@ -118,6 +118,17 @@ export default function CreateGamePage() {
 
   return (
     <div className="page">
+      <Link to={jogoAtual.status === 'finalizado' ? `/jogo/${jogoAtual.id}` : '/'} className="voltar-link">
+        ← Voltar
+      </Link>
+
+      {jogoAtual.status === 'finalizado' && (
+        <p className="ocr-aviso" style={{ marginTop: 10 }}>
+          Este jogo já foi finalizado. Você pode editar as cartelas normalmente — se isso mudar
+          quem venceu, o resultado é recalculado automaticamente.
+        </p>
+      )}
+
       {!editandoJogo ? (
         <>
           <h1 className="page-titulo">{jogoAtual.nome}</h1>
@@ -205,8 +216,11 @@ export default function CreateGamePage() {
         <Link to={`/adicionar-cartela/${jogoAtual.id}`} className="botao botao-navy" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 10 }}>
           ➕ Adicionar cartela
         </Link>
-        <button className="botao botao-fantasma" onClick={() => navigate('/')}>
-          Concluir por enquanto
+        <button
+          className="botao botao-fantasma"
+          onClick={() => navigate(jogoAtual.status === 'finalizado' ? `/jogo/${jogoAtual.id}` : '/')}
+        >
+          {jogoAtual.status === 'finalizado' ? 'Voltar para o resultado' : 'Concluir por enquanto'}
         </button>
       </div>
     </div>

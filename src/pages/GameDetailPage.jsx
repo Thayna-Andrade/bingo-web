@@ -68,6 +68,14 @@ export default function GameDetailPage() {
         </Link>
       )}
 
+      <Link
+        to={`/criar-jogo/${jogo.id}`}
+        className="botao botao-fantasma"
+        style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 10 }}
+      >
+        ✏️ Editar cartelas deste jogo
+      </Link>
+
       <button className="botao botao-fantasma" onClick={handleDuplicar} disabled={duplicando} style={{ marginBottom: 16 }}>
         {duplicando ? 'Duplicando...' : '📋 Duplicar jogo (reaproveitar cartelas)'}
       </button>

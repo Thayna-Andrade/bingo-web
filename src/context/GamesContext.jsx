@@ -19,6 +19,18 @@ function novoId() {
   return crypto.randomUUID();
 }
 
+function calcularVencedoras(cartelas, modoVitoria) {
+  return cartelas
+    .map((c, index) => ({ cartela: c, index, status: statusCartela(c, modoVitoria) }))
+    .filter((r) => r.status.temBingo)
+    .map((r) => ({
+      cartelaId: r.cartela.id,
+      indice: r.index + 1,
+      numero: r.cartela.numero || null,
+      status: r.status,
+    }));
+}
+
 export function GamesProvider({ children }) {
   const { usuario } = useAuth();
   const [jogos, setJogos] = useState([]);
@@ -72,41 +84,54 @@ export function GamesProvider({ children }) {
       numeros: numeros || criarCartelaVazia(),
       marcados: [],
     };
-    await updateDoc(doc(db, 'jogos', jogoId), { cartelas: [...jogo.cartelas, cartela] });
+    const novasCartelas = [...jogo.cartelas, cartela];
+    const dados = { cartelas: novasCartelas };
+    if (jogo.status === 'finalizado') {
+      dados.vencedoras = calcularVencedoras(novasCartelas, jogo.modoVitoria);
+    }
+    await updateDoc(doc(db, 'jogos', jogoId), dados);
   }
 
   async function removerCartela(jogoId, cartelaId) {
     const jogo = jogos.find((j) => j.id === jogoId);
     if (!jogo) return;
-    await updateDoc(doc(db, 'jogos', jogoId), {
-      cartelas: jogo.cartelas.filter((c) => c.id !== cartelaId),
-    });
+    const novasCartelas = jogo.cartelas.filter((c) => c.id !== cartelaId);
+    const dados = { cartelas: novasCartelas };
+    if (jogo.status === 'finalizado') {
+      dados.vencedoras = calcularVencedoras(novasCartelas, jogo.modoVitoria);
+    }
+    await updateDoc(doc(db, 'jogos', jogoId), dados);
   }
 
   // Edição completa: número de identificação, formato e todos os números da
   // grade. Marcações já feitas são preservadas (só descarta marcações de
-  // números que deixaram de existir na cartela, caso o formato mude).
+  // números que deixaram de existir na cartela, caso o formato mude). Se o
+  // jogo já estava finalizado, o resultado (quem venceu) é recalculado na
+  // hora, pra não ficar desatualizado depois da edição.
   async function editarCartela(jogoId, cartelaId, { numero, formatoId, numeros }) {
     const jogo = jogos.find((j) => j.id === jogoId);
     if (!jogo) return;
-    await updateDoc(doc(db, 'jogos', jogoId), {
-      cartelas: jogo.cartelas.map((c) => {
-        if (c.id !== cartelaId) return c;
-        const numerosValidos = new Set();
-        Object.values(numeros).forEach((coluna) =>
-          coluna.forEach((v) => {
-            if (typeof v === 'number') numerosValidos.add(v);
-          })
-        );
-        return {
-          ...c,
-          numero: (numero || '').trim() || null,
-          formatoId,
-          numeros,
-          marcados: c.marcados.filter((n) => numerosValidos.has(n)),
-        };
-      }),
+    const novasCartelas = jogo.cartelas.map((c) => {
+      if (c.id !== cartelaId) return c;
+      const numerosValidos = new Set();
+      Object.values(numeros).forEach((coluna) =>
+        coluna.forEach((v) => {
+          if (typeof v === 'number') numerosValidos.add(v);
+        })
+      );
+      return {
+        ...c,
+        numero: (numero || '').trim() || null,
+        formatoId,
+        numeros,
+        marcados: c.marcados.filter((n) => numerosValidos.has(n)),
+      };
     });
+    const dados = { cartelas: novasCartelas };
+    if (jogo.status === 'finalizado') {
+      dados.vencedoras = calcularVencedoras(novasCartelas, jogo.modoVitoria);
+    }
+    await updateDoc(doc(db, 'jogos', jogoId), dados);
   }
 
   async function marcarNumero(jogoId, numero) {
@@ -135,19 +160,10 @@ export function GamesProvider({ children }) {
   async function finalizarJogo(jogoId) {
     const jogo = jogos.find((j) => j.id === jogoId);
     if (!jogo) return;
-    const vencedoras = jogo.cartelas
-      .map((c, index) => ({ cartela: c, index, status: statusCartela(c, jogo.modoVitoria) }))
-      .filter((r) => r.status.temBingo)
-      .map((r) => ({
-        cartelaId: r.cartela.id,
-        indice: r.index + 1,
-        numero: r.cartela.numero || null,
-        status: r.status,
-      }));
     await updateDoc(doc(db, 'jogos', jogoId), {
       status: 'finalizado',
       finalizadoEm: new Date().toISOString(),
-      vencedoras,
+      vencedoras: calcularVencedoras(jogo.cartelas, jogo.modoVitoria),
     });
   }
 
