@@ -10,7 +10,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { criarCartelaVazia, marcarNumeroNoJogo, statusCartela } from '../utils/bingoUtils';
+import { criarCartelaVazia, marcarNumeroNoJogo, statusCartela, MODOS_VITORIA } from '../utils/bingoUtils';
 import { useAuth } from './AuthContext';
 
 const GamesContext = createContext(null);
@@ -49,12 +49,13 @@ export function GamesProvider({ children }) {
     return unsubscribe;
   }, [usuario]);
 
-  async function criarJogo(nome) {
+  async function criarJogo(nome, modoVitoria = MODOS_VITORIA.LINHA) {
     const docRef = await addDoc(collection(db, 'jogos'), {
       userId: usuario.uid,
       nome: nome.trim() || 'Jogo sem nome',
       criadoEm: new Date().toISOString(),
       status: 'em_andamento',
+      modoVitoria,
       numerosSorteados: [],
       cartelas: [],
     });
@@ -118,7 +119,7 @@ export function GamesProvider({ children }) {
     const jogo = jogos.find((j) => j.id === jogoId);
     if (!jogo) return;
     const vencedoras = jogo.cartelas
-      .map((c, index) => ({ cartela: c, index, status: statusCartela(c) }))
+      .map((c, index) => ({ cartela: c, index, status: statusCartela(c, jogo.modoVitoria) }))
       .filter((r) => r.status.temBingo)
       .map((r) => ({
         cartelaId: r.cartela.id,

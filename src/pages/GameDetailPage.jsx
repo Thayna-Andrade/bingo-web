@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
+import { MODOS_VITORIA } from '../utils/bingoUtils';
 import BingoCard from '../components/BingoCard';
 
 export default function GameDetailPage() {
@@ -20,7 +21,8 @@ export default function GameDetailPage() {
       <h1 className="page-titulo">{jogo.nome}</h1>
       <p className="page-subtitulo">
         Status: {jogo.status === 'finalizado' ? 'Finalizado' : 'Em andamento'} ·{' '}
-        {jogo.numerosSorteados.length} número(s) chamado(s)
+        {jogo.numerosSorteados.length} número(s) chamado(s) ·{' '}
+        {jogo.modoVitoria === MODOS_VITORIA.CHEIA ? 'ganha na cartela cheia' : 'ganha por linha/coluna'}
       </p>
 
       {jogo.status === 'finalizado' && (
@@ -55,7 +57,7 @@ export default function GameDetailPage() {
         Cartelas ({jogo.cartelas.length})
       </h2>
       {jogo.cartelas.map((c, i) => (
-        <BingoCard key={c.id} cartela={c} titulo={`Cartela #${i + 1}`} />
+        <BingoCard key={c.id} cartela={c} titulo={`Cartela #${i + 1}`} modoVitoria={jogo.modoVitoria} />
       ))}
     </div>
   );

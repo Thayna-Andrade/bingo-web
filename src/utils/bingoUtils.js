@@ -86,15 +86,21 @@ export function cartelaCheia(cartela) {
   );
 }
 
-// Resumo do status de uma cartela: usado para destacar "BINGO!" na tela de marcação
-export function statusCartela(cartela) {
+export const MODOS_VITORIA = {
+  LINHA: 'linha',
+  CHEIA: 'cheia',
+};
+
+// Resumo do status de uma cartela: usado para destacar "BINGO!" na tela de
+// marcação. O que conta como vitória depende do modo escolhido pra aquele
+// jogo: só linha/coluna completa, ou só cartela cheia. `linhas`, `colunas`
+// e `cheia` são sempre calculados (úteis pra mostrar o progresso), mas
+// `temBingo` só fica true quando bate com a regra escolhida.
+export function statusCartela(cartela, modoVitoria = MODOS_VITORIA.LINHA) {
   const linhas = linhasCompletas(cartela);
   const colunas = colunasCompletas(cartela);
   const cheia = cartelaCheia(cartela);
-  return {
-    linhas,
-    colunas,
-    cheia,
-    temBingo: cheia || linhas.length > 0 || colunas.length > 0,
-  };
+  const temBingo =
+    modoVitoria === MODOS_VITORIA.CHEIA ? cheia : cheia || linhas.length > 0 || colunas.length > 0;
+  return { linhas, colunas, cheia, temBingo };
 }

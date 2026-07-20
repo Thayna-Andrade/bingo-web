@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
+import { MODOS_VITORIA } from '../utils/bingoUtils';
 
 export default function CreateGamePage() {
   const { criarJogo, getJogo } = useGames();
   const navigate = useNavigate();
   const { jogoId: jogoIdDaUrl } = useParams();
   const [nomeJogo, setNomeJogo] = useState('');
+  const [modoVitoria, setModoVitoria] = useState(MODOS_VITORIA.LINHA);
   const [criando, setCriando] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -19,7 +21,7 @@ export default function CreateGamePage() {
     setErro('');
     setCriando(true);
     try {
-      const novoId = await criarJogo(nomeJogo);
+      const novoId = await criarJogo(nomeJogo, modoVitoria);
       navigate(`/criar-jogo/${novoId}`, { replace: true });
     } catch (e) {
       setErro('Não foi possível criar o jogo. Confira sua conexão e tente de novo.');
@@ -48,7 +50,32 @@ export default function CreateGamePage() {
             value={nomeJogo}
             onChange={(e) => setNomeJogo(e.target.value)}
           />
-          <button className="botao botao-navy" type="submit" disabled={criando}>
+
+          <label className="rotulo" style={{ marginTop: 16 }}>
+            Como se ganha nesse bingo?
+          </label>
+          <div className="modo-vitoria-opcoes">
+            <button
+              type="button"
+              className={`modo-vitoria-botao ${modoVitoria === MODOS_VITORIA.LINHA ? 'ativo' : ''}`}
+              onClick={() => setModoVitoria(MODOS_VITORIA.LINHA)}
+            >
+              <span className="modo-vitoria-emoji">➖</span>
+              <span className="modo-vitoria-titulo">Por linha</span>
+              <span className="modo-vitoria-desc">Ganha quem completar uma linha ou coluna primeiro</span>
+            </button>
+            <button
+              type="button"
+              className={`modo-vitoria-botao ${modoVitoria === MODOS_VITORIA.CHEIA ? 'ativo' : ''}`}
+              onClick={() => setModoVitoria(MODOS_VITORIA.CHEIA)}
+            >
+              <span className="modo-vitoria-emoji">🀄</span>
+              <span className="modo-vitoria-titulo">Cartela cheia</span>
+              <span className="modo-vitoria-desc">Ganha quem completar a cartela inteira</span>
+            </button>
+          </div>
+
+          <button className="botao botao-navy" type="submit" disabled={criando} style={{ marginTop: 20 }}>
             {criando ? 'Criando...' : 'Criar jogo e adicionar cartelas'}
           </button>
         </form>
@@ -63,7 +90,10 @@ export default function CreateGamePage() {
   return (
     <div className="page">
       <h1 className="page-titulo">{jogoAtual.nome}</h1>
-      <p className="page-subtitulo">{jogoAtual.cartelas.length} cartela(s) cadastrada(s)</p>
+      <p className="page-subtitulo">
+        {jogoAtual.cartelas.length} cartela(s) cadastrada(s) ·{' '}
+        {jogoAtual.modoVitoria === MODOS_VITORIA.CHEIA ? 'ganha na cartela cheia' : 'ganha por linha/coluna'}
+      </p>
 
       {jogoAtual.cartelas.length === 0 ? (
         <p className="vazio">Nenhuma cartela ainda. Adicione a primeira abaixo!</p>

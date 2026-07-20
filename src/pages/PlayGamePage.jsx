@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import BingoCard from '../components/BingoCard';
-import { statusCartela } from '../utils/bingoUtils';
+import { statusCartela, MODOS_VITORIA } from '../utils/bingoUtils';
 
 const FAIXAS = [
   { letra: 'B', min: 1, max: 15 },
@@ -23,7 +23,7 @@ export default function PlayGamePage() {
   const cartelasComBingo = useMemo(() => {
     if (!jogo) return [];
     return jogo.cartelas
-      .map((c, i) => ({ cartela: c, indice: i + 1, status: statusCartela(c) }))
+      .map((c, i) => ({ cartela: c, indice: i + 1, status: statusCartela(c, jogo.modoVitoria) }))
       .filter((r) => r.status.temBingo);
   }, [jogo]);
 
@@ -59,7 +59,8 @@ export default function PlayGamePage() {
     <div className="page">
       <h1 className="page-titulo">{jogo.nome}</h1>
       <p className="page-subtitulo">
-        {jogo.numerosSorteados.length} número(s) chamado(s) · {jogo.cartelas.length} cartela(s)
+        {jogo.numerosSorteados.length} número(s) chamado(s) · {jogo.cartelas.length} cartela(s) ·{' '}
+        {jogo.modoVitoria === MODOS_VITORIA.CHEIA ? 'ganha na cartela cheia' : 'ganha por linha/coluna'}
       </p>
 
       {cartelasComBingo.length > 0 && (
@@ -124,7 +125,7 @@ export default function PlayGamePage() {
       )}
 
       {cartelasFiltradas.map(({ cartela: c, indice }) => (
-        <BingoCard key={c.id} cartela={c} titulo={`Cartela #${indice}`} />
+        <BingoCard key={c.id} cartela={c} titulo={`Cartela #${indice}`} modoVitoria={jogo.modoVitoria} />
       ))}
     </div>
   );

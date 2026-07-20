@@ -657,3 +657,56 @@ a {
 .busca-cartela {
   margin-bottom: 14px;
 }
+
+.modo-vitoria-opcoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.modo-vitoria-botao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 4px;
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.modo-vitoria-botao:hover {
+  border-color: var(--navy-light);
+}
+
+.modo-vitoria-botao.ativo {
+  border-color: var(--navy-light);
+  background: #eef1fb;
+}
+
+.modo-vitoria-emoji {
+  font-size: 20px;
+}
+
+.modo-vitoria-titulo {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.modo-vitoria-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .modo-vitoria-opcoes {
+    grid-template-columns: 1fr;
+  }
+}

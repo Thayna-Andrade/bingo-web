@@ -1,8 +1,8 @@
 import React from 'react';
 import { LETRAS, numeroEstaMarcado, statusCartela } from '../utils/bingoUtils';
 
-export default function BingoCard({ cartela, titulo }) {
-  const status = statusCartela(cartela);
+export default function BingoCard({ cartela, titulo, modoVitoria }) {
+  const status = statusCartela(cartela, modoVitoria);
 
   return (
     <div className={`cartela ${status.temBingo ? 'cartela-bingo' : ''}`}>
