@@ -1,124 +1,99 @@
-# Bingo Marcador (site) 🎱
+# 🎱 Bingo Marcador
 
-Site para cadastrar cartelas de bingo e marcar todas elas de uma vez só
-quando uma peça é sorteada. Usa a mesma conta do Firebase que já estava
-configurada na versão mobile — os dados continuam na nuvem, sincronizados
-e isolados por usuário.
+**Marque todas as suas cartelas de bingo de uma vez só — sem esquecer nenhuma.**
 
-## Funcionalidades
+🔗 **Acesse o site:** [thayna-andrade.github.io/bingo-web](https://thayna-andrade.github.io/bingo-web/)
 
-- Login e cadastro (Firebase Authentication)
-- Criar jogo com quantas cartelas quiser — digitando os números manualmente
-  **ou enviando uma foto da cartela**, com preenchimento automático por OCR
-  (reconhecimento de texto rodando no próprio navegador, sem servidor)
-- Marcar jogo: toca no número sorteado e ele marca **em todas as cartelas
-  daquele jogo ao mesmo tempo**, destacando quem fecha linha/coluna/cartela cheia
-- Histórico de jogos com resultado
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-FFCA28?logo=firebase&logoColor=white)
+![Tesseract.js](https://img.shields.io/badge/OCR-Tesseract.js-000000)
+![GitHub Pages](https://img.shields.io/badge/Hospedagem-GitHub%20Pages-222222?logo=github&logoColor=white)
 
 ---
 
-## Parte 1 — Testando localmente
+## 💡 Sobre o projeto
 
-Pré-requisito: [Node.js](https://nodejs.org) versão 20 ou mais recente.
+Quem já jogou bingo com várias cartelas na mão conhece o problema: a peça é
+sorteada, e lá vai você conferir cartela por cartela, correndo o risco de
+deixar alguma sem marcar. O **Bingo Marcador** resolve exatamente isso.
+
+Você cadastra todas as cartelas de um jogo (digitando os números ou só
+enviando uma foto), e na hora de jogar basta tocar em cada número sorteado
+**uma única vez** — o site marca automaticamente todas as cartelas que têm
+aquele número, ao mesmo tempo, e avisa assim que alguma cartela vence.
+
+## ✨ Funcionalidades
+
+- 🔐 **Login e cadastro de conta**, com os dados de cada pessoa isolados e
+  sincronizados na nuvem
+- 🗂️ **Criar jogos** e cadastrar quantas cartelas quiser em cada um
+- 📷 **Cadastro de cartela por foto**, com preenchimento automático dos
+  números via reconhecimento de texto (OCR) — ou, se preferir, digitação manual
+- 🏷️ **Número de identificação por cartela** (o número impresso nela), com
+  busca rápida para achar a cartela física vencedora
+- 🎯 **Modo de vitória configurável**: escolha se aquele bingo é ganho por
+  linha/coluna completa ou só quando a cartela enche por completo
+- ✅ **Marcação simultânea**: um toque marca o número em todas as cartelas
+  do jogo ao mesmo tempo, destacando quem está prestes a vencer (ou já venceu)
+- 📜 **Histórico** de jogos anteriores, com o resultado de cada um
+
+## 🧭 Como usar
+
+1. **Crie sua conta** com e-mail e senha (ou entre, se já tiver uma)
+2. **Crie um jogo**, dando um nome a ele e escolhendo a regra de vitória
+   (por linha ou cartela cheia)
+3. **Adicione as cartelas** desse jogo — tire uma foto de cada uma (os
+   números são reconhecidos automaticamente, é só revisar antes de salvar)
+   ou digite os números na mão
+4. Na hora de jogar, abra **"Marcar jogo"** e vá tocando em cada número
+   sorteado — todas as cartelas com aquele número são marcadas juntas
+5. Quando alguém vencer, o site avisa na hora e mostra o número da cartela,
+   pra você achar ela rapidinho no meio das outras
+6. Depois, encontre esse jogo (e o resultado dele) a qualquer momento em
+   **"Jogos antigos"**
+
+## 🛠️ Tecnologias e ferramentas
+
+| Camada | Tecnologia | Papel no projeto |
+|---|---|---|
+| Interface | [React 18](https://react.dev/) + [Vite](https://vitejs.dev/) | Construção da interface e empacotamento do site |
+| Navegação | [React Router](https://reactrouter.com/) (`HashRouter`) | Rotas entre as telas, compatível com hospedagem estática |
+| Autenticação | [Firebase Authentication](https://firebase.google.com/docs/auth) | Cadastro e login por e-mail/senha |
+| Banco de dados | [Cloud Firestore](https://firebase.google.com/docs/firestore) | Armazena jogos e cartelas na nuvem, em tempo real, isolados por usuário |
+| Reconhecimento de texto (OCR) | [Tesseract.js](https://github.com/naptha/tesseract.js) | Lê os números da cartela a partir de uma foto, rodando 100% no navegador (sem servidor, sem chave de API) |
+| Hospedagem | [GitHub Pages](https://pages.github.com/) | Publicação gratuita do site como arquivo estático |
+| Deploy contínuo | [GitHub Actions](https://github.com/features/actions) | Publica automaticamente uma nova versão a cada `git push` |
+
+### Por que essa combinação?
+
+O site é hospedado inteiramente como arquivos estáticos (sem servidor
+próprio), então toda a "inteligência" do back-end vem de serviços que
+funcionam direto do navegador: o **Firebase** cuida do login e do banco de
+dados, e o **Tesseract.js** faz o OCR localmente — assim não é preciso
+expor nenhuma chave de API secreta no código público do repositório.
+
+## 🚀 Rodando o projeto localmente
+
+Pré-requisito: [Node.js](https://nodejs.org) 20 ou mais recente.
 
 ```bash
+git clone https://github.com/Thayna-Andrade/bingo-web.git
+cd bingo-web
 npm install
 npm run dev
 ```
 
-Abre em `http://localhost:5173`. Como o Firebase já está configurado em
-`src/firebaseConfig.js` com as chaves do seu projeto, o login já deve
-funcionar direto.
+O site abre em `http://localhost:5173`.
 
----
+## ☁️ Deploy
 
-## Parte 2 — Publicando no GitHub Pages
+O deploy é automático: todo `git push` na branch `main` dispara um workflow
+do GitHub Actions (`.github/workflows/deploy.yml`) que compila o projeto e
+publica o resultado no GitHub Pages. Não é preciso rodar nenhum comando de
+build manualmente.
 
-### 2.1. Criar o repositório no GitHub
-
-1. Vá em [github.com/new](https://github.com/new)
-2. Dê um nome (ex: `bingo-marcador`), deixe **público** (o GitHub Pages
-   gratuito exige repositório público, a não ser que você tenha GitHub Pro)
-3. Não marque nenhuma opção de inicializar com README (você já tem os arquivos aqui)
-
-### 2.2. Enviar o código para o repositório
-
-Na pasta do projeto:
-
-```bash
-git init
-git add .
-git commit -m "Primeira versão do site"
-git branch -M main
-git remote add origin https://github.com/SEU-USUARIO/bingo-marcador.git
-git push -u origin main
-```
-
-### 2.3. Ativar o GitHub Pages com deploy automático
-
-1. No repositório no GitHub, vá em **Settings → Pages**
-2. Em "Build and deployment" → "Source", escolha **"GitHub Actions"**
-   (não "Deploy from a branch" — já deixei um workflow pronto em
-   `.github/workflows/deploy.yml` que cuida disso)
-3. Pronto. Toda vez que você der `git push` na branch `main`, o site é
-   compilado e publicado automaticamente
-4. Acompanhe o progresso na aba **"Actions"** do repositório — quando o
-   ícone ficar verde, o site está no ar
-
-O endereço do site vai ser algo como:
-`https://SEU-USUARIO.github.io/bingo-marcador/`
-(aparece em Settings → Pages depois do primeiro deploy)
-
-### 2.4. Autorizar o domínio no Firebase (passo importante!)
-
-O Firebase só permite login em domínios que você autorizou, por segurança.
-Antes de testar o login no site publicado:
-
-1. Vá no [Firebase Console](https://console.firebase.google.com) → seu projeto → **Authentication → Settings → Authorized domains**
-2. Clique em **"Add domain"**
-3. Adicione `SEU-USUARIO.github.io` (sem `https://` e sem o nome do repositório)
-4. Salve
-
-Sem isso, o login no site publicado vai dar erro `auth/unauthorized-domain`.
-
----
-
-## Como funciona o roteamento
-
-O site usa `HashRouter` (endereços como `.../#/marcar` em vez de
-`.../marcar`). Isso é de propósito: o GitHub Pages não sabe redirecionar
-URLs "bonitas" para o `index.html` automaticamente, e o HashRouter evita
-esse problema por completo, sem precisar de configuração extra.
-
-## Sobre o reconhecimento automático de números (OCR)
-
-O cadastro de cartela por foto usa a biblioteca **Tesseract.js**, que roda o
-reconhecimento de texto inteiramente no navegador da pessoa (via
-WebAssembly) — sem precisar de servidor nem de chave de API. Isso é
-importante porque o GitHub Pages só hospeda arquivos estáticos, então não
-teríamos como esconder uma chave de API com segurança.
-
-Prós: gratuito, funciona offline depois do primeiro uso (o navegador guarda
-o modelo em cache), não expõe nenhuma credencial.
-
-Contras: a precisão é um pouco menor que a de serviços pagos de OCR (como a
-Google Cloud Vision, usada na versão mobile antes de migrarmos pro site) —
-principalmente em fotos tortas, com pouca luz, ou cartelas com fonte muito
-pequena. Por isso a etapa de revisão manual da grade **sempre aparece**
-depois da leitura automática, com os números editáveis antes de salvar.
-
-Dicas que ajudam a melhorar a precisão: tirar a foto bem de frente (não
-inclinada), com boa iluminação, e enquadrando só a cartela (sem muita borda
-ao redor).
-
-## Próximos passos possíveis
-
-- **Domínio próprio**: dá pra apontar um domínio personalizado (ex:
-  `bingo.seusite.com.br`) para o GitHub Pages nas configurações do repositório
-- **PWA (instalar como app)**: dá pra configurar o site para poder ser
-  "instalado" na tela inicial do celular, funcionando quase como um app
-
-## Estrutura do projeto
+## 📁 Estrutura do projeto
 
 ```
 bingo-web/
@@ -129,17 +104,28 @@ bingo-web/
 │   ├── main.jsx
 │   ├── App.jsx                    # rotas do site
 │   ├── index.css                  # estilos e identidade visual
-│   ├── firebaseConfig.js          # chaves do Firebase (login + banco de dados)
+│   ├── firebaseConfig.js          # configuração do Firebase (login + banco de dados)
 │   ├── context/
-│   │   ├── AuthContext.jsx
-│   │   └── GamesContext.jsx
+│   │   ├── AuthContext.jsx        # login, cadastro e sessão do usuário
+│   │   └── GamesContext.jsx       # jogos, cartelas e marcação (Firestore)
 │   ├── services/
 │   │   ├── ocr.js                 # OCR no navegador (Tesseract.js)
-│   │   └── bingoParser.js         # texto reconhecido -> grade 5x5
-│   ├── pages/                     # uma página por rota
+│   │   └── bingoParser.js         # texto reconhecido -> grade 5x5 da cartela
+│   ├── pages/                     # uma página por rota (login, criar jogo, marcar, histórico...)
 │   ├── components/
-│   │   ├── BingoCard.jsx
+│   │   ├── BingoCard.jsx          # cartela visual, com marcação e status de vitória
 │   │   └── Topbar.jsx
 │   └── utils/
-│       └── bingoUtils.js          # regras de marcação e vitória
+│       └── bingoUtils.js          # regras de marcação e verificação de vitória
 ```
+
+## 🗺️ Possíveis próximos passos
+
+- Domínio próprio (ex: `bingo.seusite.com.br`) apontando para o GitHub Pages
+- Suporte a PWA, para "instalar" o site na tela inicial do celular
+- Edição do número de identificação de cartelas já cadastradas
+- Compartilhar um mesmo jogo entre várias pessoas marcando ao mesmo tempo
+
+## 👤 Autoria
+
+Desenvolvido por [Thayná Andrade](https://github.com/Thayna-Andrade).
