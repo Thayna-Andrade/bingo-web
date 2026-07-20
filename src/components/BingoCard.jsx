@@ -1,0 +1,40 @@
+import React from 'react';
+import { LETRAS, numeroEstaMarcado, statusCartela } from '../utils/bingoUtils';
+
+export default function BingoCard({ cartela, titulo }) {
+  const status = statusCartela(cartela);
+
+  return (
+    <div className={`cartela ${status.temBingo ? 'cartela-bingo' : ''}`}>
+      {titulo && <p className="cartela-titulo">{titulo}</p>}
+      {status.cheia && <span className="cartela-selo">🎉 Cartela cheia!</span>}
+      {!status.cheia && status.temBingo && (
+        <span className="cartela-selo">✔ Linha/coluna completa</span>
+      )}
+
+      <div className="cartela-grade">
+        {LETRAS.map((letra) => (
+          <div key={letra} className="cartela-cabecalho">
+            {letra}
+          </div>
+        ))}
+
+        {[0, 1, 2, 3, 4].map((linha) =>
+          LETRAS.map((letra) => {
+            const valor = cartela.numeros[letra][linha];
+            const isFree = valor === 'FREE';
+            const marcado = isFree || (valor !== null && numeroEstaMarcado(cartela, valor));
+            return (
+              <div
+                key={letra + linha}
+                className={`cartela-celula ${marcado ? 'cartela-celula-marcada' : ''}`}
+              >
+                {isFree ? '★' : valor ?? '-'}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
