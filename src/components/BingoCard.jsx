@@ -3,9 +3,10 @@ import { LETRAS, numeroEstaMarcado, statusCartela } from '../utils/bingoUtils';
 
 export default function BingoCard({ cartela, titulo, modoVitoria }) {
   const status = statusCartela(cartela, modoVitoria);
+  const linhas = cartela.numeros[LETRAS[0]].length;
 
   return (
-    <div className={`cartela ${status.temBingo ? 'cartela-bingo' : ''}`}>
+    <div className={`cartela ${status.temBingo ? 'cartela-bingo' : ''} ${status.quaseLa ? 'cartela-quase-la' : ''}`}>
       {(titulo || cartela.numero) && (
         <p className="cartela-titulo">
           {titulo}
@@ -17,6 +18,9 @@ export default function BingoCard({ cartela, titulo, modoVitoria }) {
       {!status.cheia && status.temBingo && (
         <span className="cartela-selo">✔ Linha/coluna completa</span>
       )}
+      {!status.temBingo && status.quaseLa && (
+        <span className="cartela-selo cartela-selo-alerta">⚠ Falta 1 número!</span>
+      )}
 
       <div className="cartela-grade">
         {LETRAS.map((letra) => (
@@ -25,7 +29,7 @@ export default function BingoCard({ cartela, titulo, modoVitoria }) {
           </div>
         ))}
 
-        {[0, 1, 2, 3, 4].map((linha) =>
+        {Array.from({ length: linhas }, (_, linha) =>
           LETRAS.map((letra) => {
             const valor = cartela.numeros[letra][linha];
             const isFree = valor === 'FREE';

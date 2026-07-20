@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import { MODOS_VITORIA } from '../utils/bingoUtils';
 
 export default function CreateGamePage() {
-  const { criarJogo, getJogo } = useGames();
+  const { criarJogo, removerCartela, editarJogo, getJogo } = useGames();
   const navigate = useNavigate();
   const { jogoId: jogoIdDaUrl } = useParams();
   const [nomeJogo, setNomeJogo] = useState('');
   const [modoVitoria, setModoVitoria] = useState(MODOS_VITORIA.LINHA);
   const [criando, setCriando] = useState(false);
   const [erro, setErro] = useState('');
+
+  const [editandoJogo, setEditandoJogo] = useState(false);
+  const [nomeEditado, setNomeEditado] = useState('');
+  const [modoEditado, setModoEditado] = useState(MODOS_VITORIA.LINHA);
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
 
   async function handleCriarJogo(e) {
     e.preventDefault();
@@ -31,6 +36,30 @@ export default function CreateGamePage() {
   }
 
   const jogoAtual = jogoIdDaUrl ? getJogo(jogoIdDaUrl) : null;
+
+  useEffect(() => {
+    if (jogoAtual && !editandoJogo) {
+      setNomeEditado(jogoAtual.nome);
+      setModoEditado(jogoAtual.modoVitoria || MODOS_VITORIA.LINHA);
+    }
+  }, [jogoAtual?.id]);
+
+  async function handleRemoverCartela(cartelaId, numeroExibicao) {
+    const confirmou = window.confirm(`Remover a Cartela #${numeroExibicao}? Essa ação não pode ser desfeita.`);
+    if (!confirmou) return;
+    await removerCartela(jogoAtual.id, cartelaId);
+  }
+
+  async function handleSalvarEdicaoJogo() {
+    if (!nomeEditado.trim()) return;
+    setSalvandoEdicao(true);
+    try {
+      await editarJogo(jogoAtual.id, { nome: nomeEditado, modoVitoria: modoEditado });
+      setEditandoJogo(false);
+    } finally {
+      setSalvandoEdicao(false);
+    }
+  }
 
   if (!jogoIdDaUrl) {
     return (
@@ -89,11 +118,63 @@ export default function CreateGamePage() {
 
   return (
     <div className="page">
-      <h1 className="page-titulo">{jogoAtual.nome}</h1>
-      <p className="page-subtitulo">
-        {jogoAtual.cartelas.length} cartela(s) cadastrada(s) ·{' '}
-        {jogoAtual.modoVitoria === MODOS_VITORIA.CHEIA ? 'ganha na cartela cheia' : 'ganha por linha/coluna'}
-      </p>
+      {!editandoJogo ? (
+        <>
+          <h1 className="page-titulo">{jogoAtual.nome}</h1>
+          <p className="page-subtitulo">
+            {jogoAtual.cartelas.length} cartela(s) cadastrada(s) ·{' '}
+            {jogoAtual.modoVitoria === MODOS_VITORIA.CHEIA ? 'ganha na cartela cheia' : 'ganha por linha/coluna'}
+            {' · '}
+            <button
+              type="button"
+              className="botao-link"
+              onClick={() => setEditandoJogo(true)}
+            >
+              Editar informações do jogo
+            </button>
+          </p>
+        </>
+      ) : (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <label className="rotulo">Nome do jogo</label>
+          <input
+            className="campo"
+            value={nomeEditado}
+            onChange={(e) => setNomeEditado(e.target.value)}
+          />
+          <label className="rotulo" style={{ marginTop: 16 }}>
+            Como se ganha nesse bingo?
+          </label>
+          <div className="modo-vitoria-opcoes">
+            <button
+              type="button"
+              className={`modo-vitoria-botao ${modoEditado === MODOS_VITORIA.LINHA ? 'ativo' : ''}`}
+              onClick={() => setModoEditado(MODOS_VITORIA.LINHA)}
+            >
+              <span className="modo-vitoria-emoji">➖</span>
+              <span className="modo-vitoria-titulo">Por linha</span>
+              <span className="modo-vitoria-desc">Ganha quem completar uma linha ou coluna primeiro</span>
+            </button>
+            <button
+              type="button"
+              className={`modo-vitoria-botao ${modoEditado === MODOS_VITORIA.CHEIA ? 'ativo' : ''}`}
+              onClick={() => setModoEditado(MODOS_VITORIA.CHEIA)}
+            >
+              <span className="modo-vitoria-emoji">🀄</span>
+              <span className="modo-vitoria-titulo">Cartela cheia</span>
+              <span className="modo-vitoria-desc">Ganha quem completar a cartela inteira</span>
+            </button>
+          </div>
+          <div className="linha-botoes" style={{ marginTop: 16 }}>
+            <button className="botao botao-fantasma" onClick={() => setEditandoJogo(false)}>
+              Cancelar
+            </button>
+            <button className="botao botao-navy" onClick={handleSalvarEdicaoJogo} disabled={salvandoEdicao}>
+              {salvandoEdicao ? 'Salvando...' : 'Salvar alterações'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {jogoAtual.cartelas.length === 0 ? (
         <p className="vazio">Nenhuma cartela ainda. Adicione a primeira abaixo!</p>
@@ -104,6 +185,18 @@ export default function CreateGamePage() {
               Cartela #{i + 1}
               {c.numero && <span className="cartela-numero-badge" style={{ marginLeft: 8 }}>Nº {c.numero}</span>}
             </span>
+            <div className="lista-item-acoes">
+              <Link to={`/adicionar-cartela/${jogoAtual.id}/${c.id}`} className="botao-link">
+                Editar
+              </Link>
+              <button
+                type="button"
+                className="botao-link botao-link-perigo"
+                onClick={() => handleRemoverCartela(c.id, i + 1)}
+              >
+                Remover
+              </button>
+            </div>
           </div>
         ))
       )}

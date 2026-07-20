@@ -1,21 +1,32 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
-import { LETRAS, criarCartelaVazia } from '../utils/bingoUtils';
+import {
+  LETRAS,
+  criarCartelaVazia,
+  FORMATOS_CARTELA,
+  LISTA_FORMATOS,
+  getFormatoPorId,
+  detectarFormato,
+} from '../utils/bingoUtils';
 import { reconhecerTextoNaImagem } from '../services/ocr';
 import { montarCartelaAPartirDoOCR } from '../services/bingoParser';
 
 export default function AddCardPage() {
-  const { jogoId } = useParams();
+  const { jogoId, cartelaId } = useParams();
   const navigate = useNavigate();
-  const { adicionarCartela, getJogo } = useGames();
+  const { adicionarCartela, editarCartela, getJogo } = useGames();
   const jogo = getJogo(jogoId);
+  const modoEdicao = Boolean(cartelaId);
+  const cartelaExistente = modoEdicao ? jogo?.cartelas.find((c) => c.id === cartelaId) : null;
 
-  const [numeros, setNumeros] = useState(criarCartelaVazia());
+  const [formato, setFormato] = useState(FORMATOS_CARTELA.CINCO_LIVRE);
+  const [numeros, setNumeros] = useState(criarCartelaVazia(FORMATOS_CARTELA.CINCO_LIVRE));
   const [numeroCartela, setNumeroCartela] = useState('');
   const [salvarOutra, setSalvarOutra] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+  const [carregouExistente, setCarregouExistente] = useState(false);
 
   const [previewUrl, setPreviewUrl] = useState(null);
   const [processando, setProcessando] = useState(false);
@@ -23,6 +34,25 @@ export default function AddCardPage() {
   const [avisoOcr, setAvisoOcr] = useState('');
   const inputFotoRef = useRef(null);
   const inputGaleriaRef = useRef(null);
+
+  // No modo edição, preenche o formulário com os dados já cadastrados dessa cartela
+  useEffect(() => {
+    if (modoEdicao && cartelaExistente && !carregouExistente) {
+      const formatoDetectado = cartelaExistente.formatoId
+        ? getFormatoPorId(cartelaExistente.formatoId)
+        : detectarFormato(cartelaExistente.numeros);
+      setFormato(formatoDetectado);
+      setNumeros(cartelaExistente.numeros);
+      setNumeroCartela(cartelaExistente.numero || '');
+      setCarregouExistente(true);
+    }
+  }, [modoEdicao, cartelaExistente, carregouExistente]);
+
+  function handleTrocarFormato(novoFormato) {
+    if (novoFormato.id === formato.id) return;
+    setFormato(novoFormato);
+    setNumeros(criarCartelaVazia(novoFormato));
+  }
 
   function atualizarCelula(letra, indice, texto) {
     const valor = texto.trim();
@@ -45,38 +75,47 @@ export default function AddCardPage() {
 
     try {
       const palavras = await reconhecerTextoNaImagem(arquivo, setProgresso);
-      const cartelaReconhecida = montarCartelaAPartirDoOCR(palavras);
+      const cartelaReconhecida = montarCartelaAPartirDoOCR(palavras, formato);
       setNumeros(cartelaReconhecida);
       setAvisoOcr('Números reconhecidos! Revise com cuidado antes de salvar — o OCR pode errar.');
     } catch (err) {
       setAvisoOcr('Não deu para ler a imagem automaticamente. Digite os números manualmente abaixo.');
     } finally {
       setProcessando(false);
-      // Limpa o input para permitir escolher a mesma foto de novo depois, se quiser
       e.target.value = '';
     }
   }
 
+  function totalEsperado() {
+    return formato.linhas * 5 - (formato.temLivre ? 1 : 0);
+  }
+
   async function handleSalvar() {
     const totalPreenchido = LETRAS.reduce(
-      (soma, letra) => soma + numeros[letra].filter((v) => v !== null).length,
+      (soma, letra) => soma + numeros[letra].filter((v) => v !== null && v !== 'FREE').length,
       0
     );
-    if (totalPreenchido < 24) {
-      setErro(`Faltam números (${totalPreenchido}/24 preenchidos). Confira a grade antes de salvar.`);
+    const esperado = totalEsperado();
+    if (totalPreenchido < esperado) {
+      setErro(`Faltam números (${totalPreenchido}/${esperado} preenchidos). Confira a grade antes de salvar.`);
       return;
     }
     setErro('');
     setSalvando(true);
     try {
-      await adicionarCartela(jogoId, numeros, numeroCartela);
-      if (salvarOutra) {
-        setNumeros(criarCartelaVazia());
-        setNumeroCartela('');
-        setPreviewUrl(null);
-        setAvisoOcr('');
-      } else {
+      if (modoEdicao) {
+        await editarCartela(jogoId, cartelaId, { numero: numeroCartela, formatoId: formato.id, numeros });
         navigate(`/criar-jogo/${jogoId}`);
+      } else {
+        await adicionarCartela(jogoId, numeros, numeroCartela, formato.id);
+        if (salvarOutra) {
+          setNumeros(criarCartelaVazia(formato));
+          setNumeroCartela('');
+          setPreviewUrl(null);
+          setAvisoOcr('');
+        } else {
+          navigate(`/criar-jogo/${jogoId}`);
+        }
       }
     } catch (e) {
       setErro('Não foi possível salvar a cartela. Tente novamente.');
@@ -88,13 +127,16 @@ export default function AddCardPage() {
   if (!jogo) {
     return <div className="centro-loading">Jogo não encontrado.</div>;
   }
+  if (modoEdicao && !cartelaExistente) {
+    return <div className="centro-loading">Cartela não encontrada.</div>;
+  }
 
   return (
     <div className="page">
       <Link to={`/criar-jogo/${jogoId}`} className="voltar-link">
         ← Voltar para o jogo
       </Link>
-      <h1 className="page-titulo">Adicionar cartela</h1>
+      <h1 className="page-titulo">{modoEdicao ? 'Editar cartela' : 'Adicionar cartela'}</h1>
       <p className="page-subtitulo">
         Envie uma foto da cartela para preencher automaticamente, ou digite os números direto na grade.
       </p>
@@ -110,7 +152,25 @@ export default function AddCardPage() {
         onChange={(e) => setNumeroCartela(e.target.value)}
       />
 
-      <div className="foto-area">
+      <label className="rotulo">Formato da cartela</label>
+      <div className="formato-opcoes">
+        {LISTA_FORMATOS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            className={`formato-botao ${formato.id === f.id ? 'ativo' : ''}`}
+            onClick={() => handleTrocarFormato(f)}
+          >
+            <span className="formato-titulo">{f.label}</span>
+            <span className="formato-desc">{f.detalhe}</span>
+          </button>
+        ))}
+      </div>
+      <p className="page-subtitulo" style={{ marginTop: 6 }}>
+        Atenção: trocar o formato reinicia a grade de números abaixo.
+      </p>
+
+      <div className="foto-area" style={{ marginTop: 16 }}>
         {previewUrl ? (
           <img src={previewUrl} alt="Prévia da cartela" className="foto-preview" />
         ) : (
@@ -178,9 +238,9 @@ export default function AddCardPage() {
           </div>
         ))}
 
-        {[0, 1, 2, 3, 4].map((linha) =>
+        {Array.from({ length: formato.linhas }, (_, linha) =>
           LETRAS.map((letra) => {
-            const isFree = letra === 'N' && linha === 2;
+            const isFree = formato.temLivre && letra === 'N' && linha === Math.floor(formato.linhas / 2);
             return (
               <div key={letra + linha} className="cartela-celula" style={{ background: isFree ? 'var(--gold-light)' : '#fff' }}>
                 {isFree ? (
@@ -200,18 +260,20 @@ export default function AddCardPage() {
         )}
       </div>
 
-      <label className="checkbox-linha">
-        <span
-          className={`checkbox-caixa ${salvarOutra ? 'marcado' : ''}`}
-          onClick={() => setSalvarOutra((v) => !v)}
-        >
-          {salvarOutra && '✓'}
-        </span>
-        Adicionar outra cartela em seguida
-      </label>
+      {!modoEdicao && (
+        <label className="checkbox-linha">
+          <span
+            className={`checkbox-caixa ${salvarOutra ? 'marcado' : ''}`}
+            onClick={() => setSalvarOutra((v) => !v)}
+          >
+            {salvarOutra && '✓'}
+          </span>
+          Adicionar outra cartela em seguida
+        </label>
+      )}
 
       <button className="botao botao-verde" onClick={handleSalvar} disabled={salvando || processando}>
-        {salvando ? 'Salvando...' : 'Salvar cartela'}
+        {salvando ? 'Salvando...' : modoEdicao ? 'Salvar alterações' : 'Salvar cartela'}
       </button>
     </div>
   );

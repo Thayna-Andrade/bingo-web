@@ -1,16 +1,31 @@
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useGames } from '../context/GamesContext';
 import { MODOS_VITORIA } from '../utils/bingoUtils';
 import BingoCard from '../components/BingoCard';
 
 export default function GameDetailPage() {
   const { jogoId } = useParams();
-  const { getJogo } = useGames();
+  const navigate = useNavigate();
+  const { getJogo, duplicarJogo } = useGames();
   const jogo = getJogo(jogoId);
+  const [duplicando, setDuplicando] = useState(false);
 
   if (!jogo) {
     return <div className="centro-loading">Jogo não encontrado.</div>;
+  }
+
+  async function handleDuplicar() {
+    const nomeSugerido = `${jogo.nome} (cópia)`;
+    const novoNome = window.prompt('Nome do novo jogo:', nomeSugerido);
+    if (novoNome === null) return; // cancelou
+    setDuplicando(true);
+    try {
+      const novoId = await duplicarJogo(jogoId, novoNome);
+      navigate(`/criar-jogo/${novoId}`);
+    } finally {
+      setDuplicando(false);
+    }
   }
 
   return (
@@ -47,11 +62,15 @@ export default function GameDetailPage() {
         <Link
           to={`/marcar/${jogo.id}`}
           className="botao botao-navy"
-          style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 16 }}
+          style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 10 }}
         >
           Continuar marcando este jogo
         </Link>
       )}
+
+      <button className="botao botao-fantasma" onClick={handleDuplicar} disabled={duplicando} style={{ marginBottom: 16 }}>
+        {duplicando ? 'Duplicando...' : '📋 Duplicar jogo (reaproveitar cartelas)'}
+      </button>
 
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--navy)' }}>
         Cartelas ({jogo.cartelas.length})

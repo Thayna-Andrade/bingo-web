@@ -27,6 +27,13 @@ export default function PlayGamePage() {
       .filter((r) => r.status.temBingo);
   }, [jogo]);
 
+  const cartelasQuaseLa = useMemo(() => {
+    if (!jogo) return [];
+    return jogo.cartelas
+      .map((c, i) => ({ cartela: c, indice: i + 1, status: statusCartela(c, jogo.modoVitoria) }))
+      .filter((r) => r.status.quaseLa && !r.status.temBingo);
+  }, [jogo]);
+
   const cartelasComIndice = useMemo(
     () => jogo?.cartelas.map((c, i) => ({ cartela: c, indice: i + 1 })) || [],
     [jogo]
@@ -69,6 +76,16 @@ export default function PlayGamePage() {
           {cartelasComBingo
             .map((r) => (r.cartela.numero ? `Nº ${r.cartela.numero}` : `#${r.indice}`))
             .join(', ')}
+        </div>
+      )}
+
+      {cartelasQuaseLa.length > 0 && (
+        <div className="aviso-quase-la">
+          ⚠ Falta 1 número para o bingo na(s) cartela(s){' '}
+          {cartelasQuaseLa
+            .map((r) => (r.cartela.numero ? `Nº ${r.cartela.numero}` : `#${r.indice}`))
+            .join(', ')}
+          {' '}— fique de olho!
         </div>
       )}
 

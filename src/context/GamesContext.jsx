@@ -10,7 +10,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { criarCartelaVazia, marcarNumeroNoJogo, statusCartela, MODOS_VITORIA } from '../utils/bingoUtils';
+import { criarCartelaVazia, marcarNumeroNoJogo, statusCartela, MODOS_VITORIA, FORMATOS_CARTELA } from '../utils/bingoUtils';
 import { useAuth } from './AuthContext';
 
 const GamesContext = createContext(null);
@@ -62,12 +62,13 @@ export function GamesProvider({ children }) {
     return docRef.id;
   }
 
-  async function adicionarCartela(jogoId, numeros, numeroIdentificacao = '') {
+  async function adicionarCartela(jogoId, numeros, numeroIdentificacao = '', formatoId = FORMATOS_CARTELA.CINCO_LIVRE.id) {
     const jogo = jogos.find((j) => j.id === jogoId);
     if (!jogo) return;
     const cartela = {
       id: novoId(),
       numero: numeroIdentificacao.trim() || null,
+      formatoId,
       numeros: numeros || criarCartelaVazia(),
       marcados: [],
     };
@@ -82,13 +83,29 @@ export function GamesProvider({ children }) {
     });
   }
 
-  async function editarNumeroCartela(jogoId, cartelaId, numeroIdentificacao) {
+  // Edição completa: número de identificação, formato e todos os números da
+  // grade. Marcações já feitas são preservadas (só descarta marcações de
+  // números que deixaram de existir na cartela, caso o formato mude).
+  async function editarCartela(jogoId, cartelaId, { numero, formatoId, numeros }) {
     const jogo = jogos.find((j) => j.id === jogoId);
     if (!jogo) return;
     await updateDoc(doc(db, 'jogos', jogoId), {
-      cartelas: jogo.cartelas.map((c) =>
-        c.id === cartelaId ? { ...c, numero: numeroIdentificacao.trim() || null } : c
-      ),
+      cartelas: jogo.cartelas.map((c) => {
+        if (c.id !== cartelaId) return c;
+        const numerosValidos = new Set();
+        Object.values(numeros).forEach((coluna) =>
+          coluna.forEach((v) => {
+            if (typeof v === 'number') numerosValidos.add(v);
+          })
+        );
+        return {
+          ...c,
+          numero: (numero || '').trim() || null,
+          formatoId,
+          numeros,
+          marcados: c.marcados.filter((n) => numerosValidos.has(n)),
+        };
+      }),
     });
   }
 
@@ -138,6 +155,39 @@ export function GamesProvider({ children }) {
     await deleteDoc(doc(db, 'jogos', jogoId));
   }
 
+  // Cria um novo jogo reaproveitando as cartelas de um jogo já existente —
+  // útil quando o mesmo conjunto de cartelas físicas é usado em mais de um
+  // bingo. As cartelas são copiadas (com números e formato), mas cada uma
+  // ganha um id novo e começa desmarcada; o jogo novo começa "em andamento",
+  // sem nenhum número sorteado ainda.
+  async function duplicarJogo(jogoId, novoNome) {
+    const jogo = jogos.find((j) => j.id === jogoId);
+    if (!jogo) return;
+    const docRef = await addDoc(collection(db, 'jogos'), {
+      userId: usuario.uid,
+      nome: (novoNome || `${jogo.nome} (cópia)`).trim() || `${jogo.nome} (cópia)`,
+      criadoEm: new Date().toISOString(),
+      status: 'em_andamento',
+      modoVitoria: jogo.modoVitoria || MODOS_VITORIA.LINHA,
+      numerosSorteados: [],
+      cartelas: jogo.cartelas.map((c) => ({
+        ...c,
+        id: novoId(),
+        marcados: [],
+      })),
+    });
+    return docRef.id;
+  }
+
+  // Edita nome e/ou modo de vitória de um jogo já criado (útil logo depois
+  // de duplicar, ou a qualquer momento antes de finalizar o jogo)
+  async function editarJogo(jogoId, { nome, modoVitoria }) {
+    const dados = {};
+    if (nome !== undefined) dados.nome = nome.trim() || 'Jogo sem nome';
+    if (modoVitoria !== undefined) dados.modoVitoria = modoVitoria;
+    await updateDoc(doc(db, 'jogos', jogoId), dados);
+  }
+
   function getJogo(jogoId) {
     return jogos.find((j) => j.id === jogoId) || null;
   }
@@ -150,11 +200,13 @@ export function GamesProvider({ children }) {
         criarJogo,
         adicionarCartela,
         removerCartela,
-        editarNumeroCartela,
+        editarCartela,
         marcarNumero,
         desfazerUltimoNumero,
         finalizarJogo,
         excluirJogo,
+        duplicarJogo,
+        editarJogo,
         getJogo,
       }}
     >

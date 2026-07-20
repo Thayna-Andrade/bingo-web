@@ -22,6 +22,7 @@ function AreaLogada() {
         <Route path="/criar-jogo" element={<CreateGamePage />} />
         <Route path="/criar-jogo/:jogoId" element={<CreateGamePage />} />
         <Route path="/adicionar-cartela/:jogoId" element={<AddCardPage />} />
+        <Route path="/adicionar-cartela/:jogoId/:cartelaId" element={<AddCardPage />} />
         <Route path="/marcar" element={<SelectGameToPlayPage />} />
         <Route path="/marcar/:jogoId" element={<PlayGamePage />} />
         <Route path="/historico" element={<GameHistoryPage />} />
