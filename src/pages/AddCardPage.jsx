@@ -77,7 +77,24 @@ export default function AddCardPage() {
       const palavras = await reconhecerTextoNaImagem(arquivo, setProgresso);
       const cartelaReconhecida = montarCartelaAPartirDoOCR(palavras, formato);
       setNumeros(cartelaReconhecida);
-      setAvisoOcr('Números reconhecidos! Revise com cuidado antes de salvar — o OCR pode errar.');
+
+      const totalReconhecido = LETRAS.reduce(
+        (soma, letra) => soma + cartelaReconhecida[letra].filter((v) => typeof v === 'number').length,
+        0
+      );
+      const esperado = formato.linhas * 5 - (formato.temLivre ? 1 : 0);
+
+      if (totalReconhecido === 0) {
+        setAvisoOcr(
+          'Não conseguimos identificar nenhum número nessa imagem. Tente uma foto mais nítida, bem enquadrada e com boa luz — ou digite os números manualmente abaixo.'
+        );
+      } else if (totalReconhecido < esperado) {
+        setAvisoOcr(
+          `Reconhecemos ${totalReconhecido} de ${esperado} números. Complete e revise o restante na grade abaixo antes de salvar.`
+        );
+      } else {
+        setAvisoOcr('Números reconhecidos! Revise com cuidado antes de salvar — o OCR pode errar.');
+      }
     } catch (err) {
       setAvisoOcr('Não deu para ler a imagem automaticamente. Digite os números manualmente abaixo.');
     } finally {
