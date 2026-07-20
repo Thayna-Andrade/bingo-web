@@ -7,9 +7,11 @@ import BingoCard from '../components/BingoCard';
 export default function GameDetailPage() {
   const { jogoId } = useParams();
   const navigate = useNavigate();
-  const { getJogo, duplicarJogo } = useGames();
+  const { getJogo, duplicarJogo, excluirJogo } = useGames();
   const jogo = getJogo(jogoId);
   const [duplicando, setDuplicando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erro, setErro] = useState('');
 
   if (!jogo) {
     return <div className="centro-loading">Jogo não encontrado.</div>;
@@ -19,12 +21,33 @@ export default function GameDetailPage() {
     const nomeSugerido = `${jogo.nome} (cópia)`;
     const novoNome = window.prompt('Nome do novo jogo:', nomeSugerido);
     if (novoNome === null) return; // cancelou
+    setErro('');
     setDuplicando(true);
     try {
       const novoId = await duplicarJogo(jogoId, novoNome);
       navigate(`/criar-jogo/${novoId}`);
+    } catch (e) {
+      console.error('Erro ao duplicar jogo:', e);
+      setErro(`Não foi possível duplicar o jogo. (${e.code || e.message || 'erro desconhecido'})`);
     } finally {
       setDuplicando(false);
+    }
+  }
+
+  async function handleExcluir() {
+    const confirmou = window.confirm(
+      `Excluir o jogo "${jogo.nome}" e todas as ${jogo.cartelas.length} cartela(s) dele? Essa ação não pode ser desfeita.`
+    );
+    if (!confirmou) return;
+    setErro('');
+    setExcluindo(true);
+    try {
+      await excluirJogo(jogoId);
+      navigate('/historico');
+    } catch (e) {
+      console.error('Erro ao excluir jogo:', e);
+      setErro(`Não foi possível excluir o jogo. (${e.code || e.message || 'erro desconhecido'})`);
+      setExcluindo(false);
     }
   }
 
@@ -34,6 +57,7 @@ export default function GameDetailPage() {
         ← Voltar ao histórico
       </Link>
       <h1 className="page-titulo">{jogo.nome}</h1>
+      {erro && <div className="erro-texto">{erro}</div>}
       <p className="page-subtitulo">
         Status: {jogo.status === 'finalizado' ? 'Finalizado' : 'Em andamento'} ·{' '}
         {jogo.numerosSorteados.length} número(s) chamado(s) ·{' '}
@@ -76,8 +100,12 @@ export default function GameDetailPage() {
         ✏️ Editar cartelas deste jogo
       </Link>
 
-      <button className="botao botao-fantasma" onClick={handleDuplicar} disabled={duplicando} style={{ marginBottom: 16 }}>
+      <button className="botao botao-fantasma" onClick={handleDuplicar} disabled={duplicando} style={{ marginBottom: 10 }}>
         {duplicando ? 'Duplicando...' : '📋 Duplicar jogo (reaproveitar cartelas)'}
+      </button>
+
+      <button className="botao botao-vermelho" onClick={handleExcluir} disabled={excluindo} style={{ marginBottom: 16 }}>
+        {excluindo ? 'Excluindo...' : '🗑 Excluir jogo'}
       </button>
 
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--navy)' }}>
