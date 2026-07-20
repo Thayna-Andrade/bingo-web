@@ -6,7 +6,13 @@ export default function BingoCard({ cartela, titulo }) {
 
   return (
     <div className={`cartela ${status.temBingo ? 'cartela-bingo' : ''}`}>
-      {titulo && <p className="cartela-titulo">{titulo}</p>}
+      {(titulo || cartela.numero) && (
+        <p className="cartela-titulo">
+          {titulo}
+          {titulo && cartela.numero && ' · '}
+          {cartela.numero && <span className="cartela-numero-badge">Nº {cartela.numero}</span>}
+        </p>
+      )}
       {status.cheia && <span className="cartela-selo">🎉 Cartela cheia!</span>}
       {!status.cheia && status.temBingo && (
         <span className="cartela-selo">✔ Linha/coluna completa</span>

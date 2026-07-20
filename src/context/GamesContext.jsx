@@ -61,10 +61,15 @@ export function GamesProvider({ children }) {
     return docRef.id;
   }
 
-  async function adicionarCartela(jogoId, numeros) {
+  async function adicionarCartela(jogoId, numeros, numeroIdentificacao = '') {
     const jogo = jogos.find((j) => j.id === jogoId);
     if (!jogo) return;
-    const cartela = { id: novoId(), numeros: numeros || criarCartelaVazia(), marcados: [] };
+    const cartela = {
+      id: novoId(),
+      numero: numeroIdentificacao.trim() || null,
+      numeros: numeros || criarCartelaVazia(),
+      marcados: [],
+    };
     await updateDoc(doc(db, 'jogos', jogoId), { cartelas: [...jogo.cartelas, cartela] });
   }
 
@@ -73,6 +78,16 @@ export function GamesProvider({ children }) {
     if (!jogo) return;
     await updateDoc(doc(db, 'jogos', jogoId), {
       cartelas: jogo.cartelas.filter((c) => c.id !== cartelaId),
+    });
+  }
+
+  async function editarNumeroCartela(jogoId, cartelaId, numeroIdentificacao) {
+    const jogo = jogos.find((j) => j.id === jogoId);
+    if (!jogo) return;
+    await updateDoc(doc(db, 'jogos', jogoId), {
+      cartelas: jogo.cartelas.map((c) =>
+        c.id === cartelaId ? { ...c, numero: numeroIdentificacao.trim() || null } : c
+      ),
     });
   }
 
@@ -105,7 +120,12 @@ export function GamesProvider({ children }) {
     const vencedoras = jogo.cartelas
       .map((c, index) => ({ cartela: c, index, status: statusCartela(c) }))
       .filter((r) => r.status.temBingo)
-      .map((r) => ({ cartelaId: r.cartela.id, indice: r.index + 1, status: r.status }));
+      .map((r) => ({
+        cartelaId: r.cartela.id,
+        indice: r.index + 1,
+        numero: r.cartela.numero || null,
+        status: r.status,
+      }));
     await updateDoc(doc(db, 'jogos', jogoId), {
       status: 'finalizado',
       finalizadoEm: new Date().toISOString(),
@@ -129,6 +149,7 @@ export function GamesProvider({ children }) {
         criarJogo,
         adicionarCartela,
         removerCartela,
+        editarNumeroCartela,
         marcarNumero,
         desfazerUltimoNumero,
         finalizarJogo,

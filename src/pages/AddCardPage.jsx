@@ -12,6 +12,7 @@ export default function AddCardPage() {
   const jogo = getJogo(jogoId);
 
   const [numeros, setNumeros] = useState(criarCartelaVazia());
+  const [numeroCartela, setNumeroCartela] = useState('');
   const [salvarOutra, setSalvarOutra] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -68,9 +69,10 @@ export default function AddCardPage() {
     setErro('');
     setSalvando(true);
     try {
-      await adicionarCartela(jogoId, numeros);
+      await adicionarCartela(jogoId, numeros, numeroCartela);
       if (salvarOutra) {
         setNumeros(criarCartelaVazia());
+        setNumeroCartela('');
         setPreviewUrl(null);
         setAvisoOcr('');
       } else {
@@ -98,6 +100,15 @@ export default function AddCardPage() {
       </p>
 
       {erro && <div className="erro-texto">{erro}</div>}
+
+      <label className="rotulo">Número da cartela (opcional)</label>
+      <input
+        className="campo"
+        style={{ marginBottom: 16 }}
+        placeholder='Ex: "1201" (o número impresso na cartela)'
+        value={numeroCartela}
+        onChange={(e) => setNumeroCartela(e.target.value)}
+      />
 
       <div className="foto-area">
         {previewUrl ? (

@@ -642,3 +642,18 @@ a {
   font-size: 13px;
   color: #7a5200;
 }
+
+.cartela-numero-badge {
+  display: inline-block;
+  background: var(--navy-light);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  margin-left: 2px;
+}
+
+.busca-cartela {
+  margin-bottom: 14px;
+}

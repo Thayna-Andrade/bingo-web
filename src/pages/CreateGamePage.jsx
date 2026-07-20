@@ -70,7 +70,10 @@ export default function CreateGamePage() {
       ) : (
         jogoAtual.cartelas.map((c, i) => (
           <div key={c.id} className="lista-item">
-            <span className="lista-item-titulo">Cartela #{i + 1}</span>
+            <span className="lista-item-titulo">
+              Cartela #{i + 1}
+              {c.numero && <span className="cartela-numero-badge" style={{ marginLeft: 8 }}>Nº {c.numero}</span>}
+            </span>
           </div>
         ))
       )}

@@ -31,7 +31,8 @@ export default function GameDetailPage() {
           {jogo.vencedoras && jogo.vencedoras.length > 0 ? (
             jogo.vencedoras.map((v) => (
               <p key={v.cartelaId} style={{ margin: '2px 0' }}>
-                🏆 Cartela #{v.indice} — {v.status.cheia ? 'cartela cheia' : 'linha/coluna completa'}
+                🏆 Cartela #{v.indice}
+                {v.numero && ` · Nº ${v.numero}`} — {v.status.cheia ? 'cartela cheia' : 'linha/coluna completa'}
               </p>
             ))
           ) : (

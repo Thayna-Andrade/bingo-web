@@ -18,6 +18,7 @@ export default function PlayGamePage() {
   const { getJogo, marcarNumero, desfazerUltimoNumero, finalizarJogo } = useGames();
   const jogo = getJogo(jogoId);
   const [letraSelecionada, setLetraSelecionada] = useState('B');
+  const [buscaCartela, setBuscaCartela] = useState('');
 
   const cartelasComBingo = useMemo(() => {
     if (!jogo) return [];
@@ -25,6 +26,19 @@ export default function PlayGamePage() {
       .map((c, i) => ({ cartela: c, indice: i + 1, status: statusCartela(c) }))
       .filter((r) => r.status.temBingo);
   }, [jogo]);
+
+  const cartelasComIndice = useMemo(
+    () => jogo?.cartelas.map((c, i) => ({ cartela: c, indice: i + 1 })) || [],
+    [jogo]
+  );
+
+  const cartelasFiltradas = useMemo(() => {
+    const termo = buscaCartela.trim().toLowerCase();
+    if (!termo) return cartelasComIndice;
+    return cartelasComIndice.filter(({ cartela: c }) =>
+      (c.numero || '').toLowerCase().includes(termo)
+    );
+  }, [cartelasComIndice, buscaCartela]);
 
   if (!jogo) {
     return <div className="centro-loading">Jogo não encontrado.</div>;
@@ -50,7 +64,10 @@ export default function PlayGamePage() {
 
       {cartelasComBingo.length > 0 && (
         <div className="aviso-bingo">
-          🎉 BINGO! Cartela(s) {cartelasComBingo.map((r) => `#${r.indice}`).join(', ')}
+          🎉 BINGO! Cartela(s){' '}
+          {cartelasComBingo
+            .map((r) => (r.cartela.numero ? `Nº ${r.cartela.numero}` : `#${r.indice}`))
+            .join(', ')}
         </div>
       )}
 
@@ -94,8 +111,20 @@ export default function PlayGamePage() {
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--navy)' }}>
         Cartelas ({jogo.cartelas.length})
       </h2>
-      {jogo.cartelas.map((c, i) => (
-        <BingoCard key={c.id} cartela={c} titulo={`Cartela #${i + 1}`} />
+
+      <input
+        className="campo busca-cartela"
+        placeholder="🔍 Buscar cartela pelo número..."
+        value={buscaCartela}
+        onChange={(e) => setBuscaCartela(e.target.value)}
+      />
+
+      {cartelasFiltradas.length === 0 && (
+        <p className="page-subtitulo">Nenhuma cartela encontrada com esse número.</p>
+      )}
+
+      {cartelasFiltradas.map(({ cartela: c, indice }) => (
+        <BingoCard key={c.id} cartela={c} titulo={`Cartela #${indice}`} />
       ))}
     </div>
   );
